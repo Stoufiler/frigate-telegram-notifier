@@ -1,6 +1,5 @@
-package main
-
 import (
+	"embed" // New import
 	"encoding/json"
 	"fmt"
 	"io"
@@ -16,26 +15,8 @@ import (
 	"golang.org/x/text/language"
 )
 
-type EventData struct {
-	Detections []string `json:"detections"`
-	Objects    []string `json:"objects"`
-	Zones      []string `json:"zones"`
-}
-
-type CameraData struct {
-	ID        string    `json:"id"`
-	Camera    string    `json:"camera"`
-	StartTime float64   `json:"start_time"`
-	EndTime   *float64  `json:"end_time"`
-	ThumbPath string    `json:"thumb_path"`
-	Data      EventData `json:"data"`
-}
-
-type Event struct {
-	Type   string     `json:"type"`
-	Before CameraData `json:"before"`
-	After  CameraData `json:"after"`
-}
+//go:embed locales/*
+var content embed.FS
 
 var T *i18n.Localizer
 
@@ -46,13 +27,14 @@ func init() {
 	bundle = i18n.NewBundle(language.English)
 	bundle.RegisterUnmarshalFunc("json", json.Unmarshal)
 	// Charger les fichiers de traduction avec gestion d'erreur
-	_, err := bundle.LoadMessageFile("locales/en.json")
+	// Utilisation de embed.FS pour charger depuis le binaire
+	_, err := bundle.LoadMessageFileFS(content, "locales/en.json")
 	if err != nil {
-		panic(fmt.Sprintf("Erreur chargement en.json: %v", err))
+		panic(fmt.Sprintf("Erreur chargement locales/en.json: %v", err))
 	}
-	_, err = bundle.LoadMessageFile("locales/fr.json")
+	_, err = bundle.LoadMessageFileFS(content, "locales/fr.json")
 	if err != nil {
-		panic(fmt.Sprintf("Erreur chargement fr.json: %v", err))
+		panic(fmt.Sprintf("Erreur chargement locales/fr.json: %v", err))
 	}
 }
 
