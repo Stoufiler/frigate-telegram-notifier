@@ -1,0 +1,84 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*.*.*' # Triggers on tags like v1.0.0, v0.1.2, etc.
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+env:
+  DOCKER_IMAGE_NAME: frigate-telegram-bot
+
+jobs:
+  build-go-binaries:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Go Mod Tidy
+        run: go mod tidy
+        working-directory: ./bot
+
+      - name: Build Linux Binary
+        run: GOOS=linux GOARCH=amd64 go build -o frigate_bot_linux ./main.go
+        working-directory: ./bot
+
+      - name: Build macOS Binary
+        run: GOOS=darwin GOARCH=amd64 go build -o frigate_bot_macos ./main.go
+        working-directory: ./bot
+
+      - name: Build Windows Binary
+        run: GOOS=windows GOARCH=amd64 go build -o frigate_bot_windows.exe ./main.go
+        working-directory: ./bot
+
+      - name: Upload Binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: frigate-bot-binaries
+          path: |
+            ./bot/frigate_bot_linux
+            ./bot/frigate_bot_macos
+            ./bot/frigate_bot_windows.exe
+
+  build-and-push-docker-image:
+    runs-on: ubuntu-latest
+    needs: build-go-binaries # Ensure binaries are built first
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract tag name
+        id: extract_tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./bot/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ steps.extract_tag.outputs.TAG_NAME }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
