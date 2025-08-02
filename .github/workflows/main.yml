@@ -76,6 +76,10 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/v')
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
+      - name: Set lowercase repository name
+        id: set_repo_lower
+        run: echo "repo_lower=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
@@ -83,7 +87,7 @@ jobs:
           file: ./bot/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ lower(github.repository) }}:latest
-            ghcr.io/${{ lower(github.repository) }}:${{ steps.extract_tag.outputs.TAG_NAME }}
+            ghcr.io/${{ steps.set_repo_lower.outputs.repo_lower }}:latest
+            ghcr.io/${{ steps.set_repo_lower.outputs.repo_lower }}:${{ steps.extract_tag.outputs.TAG_NAME }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
