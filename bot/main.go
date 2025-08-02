@@ -1,3 +1,5 @@
+package main
+
 import (
 	"embed" // New import
 	"encoding/json"
@@ -14,6 +16,78 @@ import (
 	"github.com/nicksnyder/go-i18n/v2/i18n"
 	"golang.org/x/text/language"
 )
+
+// Event represents the structure of the MQTT message from Frigate.
+type Event struct {
+	Before struct {
+		ID           string    `json:"id"`
+		Camera       string    `json:"camera"`
+		Label        string    `json:"label"`
+		SubLabel     *string   `json:"sub_label"`
+		Detector     string    `json:"detector"`
+		TopScore     float64   `json:"top_score"`
+		Scores       []float64 `json:"scores"`
+		Box          []int     `json:"box"`
+		Area         int       `json:"area"`
+		Ratio        float64   `json:"ratio"`
+		Region       []int     `json:"region"`
+		FrameTime    float64   `json:"frame_time"`
+		MotionTokens []string  `json:"motion_tokens"`
+		TriggerID    string    `json:"trigger_id"`
+		FalsePositive bool      `json:"false_positive"`
+		StartTime    float64   `json:"start_time"`
+		EndTime      *float64  `json:"end_time"`
+		Score        float64   `json:"score"`
+		URL          string    `json:"url"`
+		PlusID       *string   `json:"plus_id"`
+		Data         struct {
+			Objects    []string  `json:"objects"`
+			Detections []string  `json:"detections"`
+			Zones      []string  `json:"zones"`
+			Attributes []string  `json:"attributes"`
+			TopScores  []float64 `json:"top_scores"`
+		} `json:"data"`
+		Thumbnail string `json:"thumbnail"`
+		HasClip   bool   `json:"has_clip"`
+		HasSnapshot bool `json:"has_snapshot"`
+	} `json:"before"`
+	After struct {
+		ID           string    `json:"id"`
+		Camera       string    `json:"camera"`
+		Label        string    `json:"label"`
+		SubLabel     *string   `json:"sub_label"`
+		Detector     string    `json:"detector"`
+		TopScore     float64   `json:"top_score"`
+		Scores       []float64 `json:"scores"`
+		Box          []int     `json:"box"`
+		Area         int       `json:"area"`
+		Ratio        float64   `json:"ratio"`
+		Region       []int     `json:"region"`
+		FrameTime    float64   `json:"frame_time"`
+		MotionTokens []string  `json:"motion_tokens"`
+		TriggerID    string    `json:"trigger_id"`
+		FalsePositive bool      `json:"false_positive"`
+		StartTime    float64   `json:"start_time"`
+		EndTime      *float64  `json:"end_time"`
+		Score        float64   `json:"score"`
+		URL          string    `json:"url"`
+		PlusID       *string   `json:"plus_id"`
+		Data         struct {
+			Objects    []string  `json:"objects"`
+			Detections []string  `json:"detections"`
+			Zones      []string  `json:"zones"`
+			Attributes []string  `json:"attributes"`
+			TopScores  []float64 `json:"top_scores"`
+		} `json:"data"`
+		Thumbnail string `json:"thumbnail"`
+		HasClip   bool   `json:"has_clip"`
+		HasSnapshot bool `json:"has_snapshot"`
+	} `json:"after"`
+	Type      string  `json:"type"`
+	Topic     string  `json:"topic"`
+	BeforeID  *string `json:"before_id"`
+	AfterID   *string `json:"after_id"`
+}
 
 //go:embed locales/*
 var content embed.FS
