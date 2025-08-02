@@ -83,7 +83,7 @@ jobs:
           file: ./bot/Dockerfile
           push: true
           tags: |
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ steps.extract_tag.outputs.TAG_NAME }}
+            ghcr.io/${{ lower(github.repository) }}:latest
+            ghcr.io/${{ lower(github.repository) }}:${{ steps.extract_tag.outputs.TAG_NAME }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
