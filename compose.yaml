@@ -1,7 +1,6 @@
-version: "3.8"
 services:
   frigate-telegram-bot:
-    build: ./bot
+    image: ghcr.io/stoufiler/frigate-telegram-notifier:latest
     container_name: frigate-telegram-bot
     restart: unless-stopped
     environment:
