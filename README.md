@@ -122,8 +122,10 @@ services:
       - FRIGATE_URL=${FRIGATE_URL}
       - CAMERA_LIST=${CAMERA_LIST}
       - BOT_LANGUAGE=${BOT_LANGUAGE}
-    volumes:
-      - /tmp:/tmp # Required for temporary image/video files
+    # No need to mount /tmp if you're not saving temporary files, 
+    # but it's good practice if you do.
+    # volumes:
+    #   - /tmp:/tmp 
 ```
 
 ## CI/CD (GitHub Actions)
