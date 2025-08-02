@@ -34,8 +34,12 @@ jobs:
         run: GOOS=linux GOARCH=amd64 go build -o frigate_bot_linux ./main.go
         working-directory: ./bot
 
-      - name: Build macOS Binary
-        run: GOOS=darwin GOARCH=amd64 go build -o frigate_bot_macos ./main.go
+      - name: Build macOS Binary (Intel)
+        run: GOOS=darwin GOARCH=amd64 go build -o frigate_bot_macos_amd64 ./main.go
+        working-directory: ./bot
+
+      - name: Build macOS Binary (ARM)
+        run: GOOS=darwin GOARCH=arm64 go build -o frigate_bot_macos_arm64 ./main.go
         working-directory: ./bot
 
       - name: Build Windows Binary
@@ -48,11 +52,17 @@ jobs:
           name: frigate_bot_linux
           path: ./bot/frigate_bot_linux
 
-      - name: Upload macOS Binary
+      - name: Upload macOS Binary (Intel)
         uses: actions/upload-artifact@v4
         with:
-          name: frigate_bot_macos
-          path: ./bot/frigate_bot_macos
+          name: frigate_bot_macos_amd64
+          path: ./bot/frigate_bot_macos_amd64
+
+      - name: Upload macOS Binary (ARM)
+        uses: actions/upload-artifact@v4
+        with:
+          name: frigate_bot_macos_arm64
+          path: ./bot/frigate_bot_macos_arm64
 
       - name: Upload Windows Binary
         uses: actions/upload-artifact@v4
@@ -122,10 +132,16 @@ jobs:
           name: frigate_bot_linux
           path: ./binaries
 
-      - name: Download macOS Binary
+      - name: Download macOS Binary (Intel)
         uses: actions/download-artifact@v4
         with:
-          name: frigate_bot_macos
+          name: frigate_bot_macos_amd64
+          path: ./binaries
+
+      - name: Download macOS Binary (ARM)
+        uses: actions/download-artifact@v4
+        with:
+          name: frigate_bot_macos_arm64
           path: ./binaries
 
       - name: Download Windows Binary
@@ -143,5 +159,6 @@ jobs:
           prerelease: false
           files: |
             ./binaries/frigate_bot_linux
-            ./binaries/frigate_bot_macos
+            ./binaries/frigate_bot_macos_amd64
+            ./binaries/frigate_bot_macos_arm64
             ./binaries/frigate_bot_windows.exe
