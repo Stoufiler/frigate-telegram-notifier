@@ -1,0 +1,17 @@
+version: "3.8"
+services:
+  frigate-telegram-bot:
+    build: ./bot
+    container_name: frigate-telegram-bot
+    restart: unless-stopped
+    environment:
+      - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - MQTT_BROKER=${MQTT_BROKER}
+      - MQTT_USERNAME=${MQTT_USERNAME}
+      - MQTT_PASSWORD=${MQTT_PASSWORD}
+      - MQTT_TOPIC=${MQTT_TOPIC}
+      - FRIGATE_URL=${FRIGATE_URL}
+      - CAMERA_LIST=${CAMERA_LIST}
+      - MQTT_OBJECT_FILTER=${MQTT_OBJECT_FILTER}
+      - BOT_LANGUAGE=${BOT_LANGUAGE}

@@ -1,0 +1,22 @@
+.env
+mediamtx.yml
+
+# Go build artifacts
+/bot/frigate_bot
+/bot/frigate_bot_linux
+/bot/frigate_bot_macos
+/bot/frigate_bot_windows.exe
+
+# General executables
+*.exe
+
+# Logs and temporary files
+*.log
+*.tmp
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*~
+__debug_bin
