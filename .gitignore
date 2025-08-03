@@ -3,9 +3,13 @@ mediamtx.yml
 
 # Go build artifacts
 /bot/frigate_bot
+/bot/frigate-bot
 /bot/frigate_bot_linux
+/bot/frigate-bot-linux
 /bot/frigate_bot_macos
+/bot/frigate-bot-macos
 /bot/frigate_bot_windows.exe
+/bot/frigate-bot-windows.exe
 
 # General executables
 *.exe
