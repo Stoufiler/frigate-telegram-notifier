@@ -100,17 +100,29 @@ Le client Frigate encapsule cette logique ; les handlers n'en savent rien.
 
 ## Toolchain
 
-- `go.mod` → **Go 1.26**.
-- `Dockerfile` → base `golang:1.26-alpine`, multi-stage conservé.
+- `go.mod` → **Go 1.26**, `toolchain go1.26.5` (corrige la CVE stdlib
+  GO-2026-5856 dans crypto/tls remontée par govulncheck).
+- `Dockerfile` → base `golang:1.26.5-alpine`, multi-stage, cache des deps,
+  `ca-certificates` ajouté dans l'image finale (TLS Telegram/Frigate).
 - Dépendances : `go get -u ./... && go mod tidy`.
+- Qualité : `gofmt`, `go vet`, `staticcheck`, `golangci-lint`, `govulncheck`
+  doivent tous passer.
 
 ## Config finale (variables d'environnement)
 
-Obligatoires : `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`, `MQTT_BROKER`,
-`MQTT_TOPIC`, `FRIGATE_URL`.
-Optionnelles : `MQTT_USERNAME`, `MQTT_PASSWORD`, `CAMERA_LIST`,
-`MQTT_OBJECT_FILTER`, `BOT_LANGUAGE` (défaut `fr`),
-**`FRIGATE_USERNAME`**, **`FRIGATE_PASSWORD`** (nouvelles).
+Frigate et MQTT sont configurés par **host + port optionnel** (le bot construit
+les URLs), pour qu'un docker-compose passe une simple IP visant le port interne
+non authentifié de Frigate (5000).
+
+Obligatoires : `TELEGRAM_TOKEN`, `TELEGRAM_CHAT_ID`, `MQTT_HOST`,
+`MQTT_TOPIC`, `FRIGATE_HOST`.
+Optionnelles : `MQTT_PORT` (défaut `1883`), `MQTT_USERNAME`, `MQTT_PASSWORD`,
+`FRIGATE_PORT` (défaut `5000`), `FRIGATE_TLS` (défaut `false`),
+`FRIGATE_USERNAME`, `FRIGATE_PASSWORD`, `CAMERA_LIST`,
+`MQTT_OBJECT_FILTER`, `BOT_LANGUAGE` (défaut `fr`).
+
+Construction : `FrigateURL = {http|https}://FRIGATE_HOST:FRIGATE_PORT`,
+`MQTTBroker = tcp://MQTT_HOST:MQTT_PORT`.
 
 ## Vérification
 

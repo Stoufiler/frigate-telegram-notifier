@@ -1,25 +1,21 @@
-# Use the official Go image as a base image
-FROM golang:1.24-alpine
+# --- Build stage ---
+FROM golang:1.26.5-alpine AS builder
 
-# Set the current working directory inside the container
 WORKDIR /app
 
-# Copy the entire bot directory into the container
+# Cache dependencies first for faster rebuilds.
+COPY bot/go.mod bot/go.sum ./
+RUN go mod download
+
 COPY bot/ .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /usr/local/bin/frigate-bot .
 
-# Build the Go application
-RUN CGO_ENABLED=0 GOOS=linux go build -o /usr/local/bin/frigate_bot .
-
-# Start a new stage from scratch
+# --- Runtime stage ---
 FROM alpine:latest
 
-WORKDIR /app
+# CA certificates are required for HTTPS calls to Telegram and Frigate.
+RUN apk add --no-cache ca-certificates
 
-# Copy the compiled executable from the previous stage
-COPY --from=0 /usr/local/bin/frigate_bot /usr/local/bin/frigate_bot
+COPY --from=builder /usr/local/bin/frigate-bot /usr/local/bin/frigate-bot
 
-# Expose any ports if your application listens on them
-# EXPOSE 8080
-
-# Command to run the executable
-ENTRYPOINT ["/usr/local/bin/frigate_bot"]
+ENTRYPOINT ["/usr/local/bin/frigate-bot"]
