@@ -19,53 +19,50 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v6
         with:
-          go-version: '1.22'
-
-      - name: Go Mod Tidy
-        run: go mod tidy
-        working-directory: ./bot
+          go-version-file: ./bot/go.mod
+          cache-dependency-path: ./bot/go.sum
 
       - name: Build Linux Binary
-        run: GOOS=linux GOARCH=amd64 go build -o frigate_bot_linux ./main.go
+        run: GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o frigate_bot_linux .
         working-directory: ./bot
 
       - name: Build macOS Binary (Intel)
-        run: GOOS=darwin GOARCH=amd64 go build -o frigate_bot_macos_amd64 ./main.go
+        run: GOOS=darwin GOARCH=amd64 go build -ldflags="-s -w" -o frigate_bot_macos_amd64 .
         working-directory: ./bot
 
       - name: Build macOS Binary (ARM)
-        run: GOOS=darwin GOARCH=arm64 go build -o frigate_bot_macos_arm64 ./main.go
+        run: GOOS=darwin GOARCH=arm64 go build -ldflags="-s -w" -o frigate_bot_macos_arm64 .
         working-directory: ./bot
 
       - name: Build Windows Binary
-        run: GOOS=windows GOARCH=amd64 go build -o frigate_bot_windows.exe ./main.go
+        run: GOOS=windows GOARCH=amd64 go build -ldflags="-s -w" -o frigate_bot_windows.exe .
         working-directory: ./bot
 
       - name: Upload Linux Binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: frigate_bot_linux
           path: ./bot/frigate_bot_linux
 
       - name: Upload macOS Binary (Intel)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: frigate_bot_macos_amd64
           path: ./bot/frigate_bot_macos_amd64
 
       - name: Upload macOS Binary (ARM)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: frigate_bot_macos_arm64
           path: ./bot/frigate_bot_macos_arm64
 
       - name: Upload Windows Binary
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: frigate_bot_windows.exe
           path: ./bot/frigate_bot_windows.exe
@@ -81,7 +78,7 @@ jobs:
         run: echo "GHCR_REPO_LOWER=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
 
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -101,7 +98,7 @@ jobs:
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
       - name: Build and push Docker image
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./bot/Dockerfile
@@ -120,38 +117,38 @@ jobs:
       contents: write # To create a GitHub Release
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Extract tag name
         id: extract_tag
         run: echo "TAG_NAME=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
 
       - name: Download Linux Binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: frigate_bot_linux
           path: ./binaries
 
       - name: Download macOS Binary (Intel)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: frigate_bot_macos_amd64
           path: ./binaries
 
       - name: Download macOS Binary (ARM)
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: frigate_bot_macos_arm64
           path: ./binaries
 
       - name: Download Windows Binary
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v5
         with:
           name: frigate_bot_windows.exe
           path: ./binaries
 
       - name: Create Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.extract_tag.outputs.TAG_NAME }}
           name: Release ${{ steps.extract_tag.outputs.TAG_NAME }}

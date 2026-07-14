@@ -2,6 +2,8 @@
 
 This project provides a Go-based Telegram bot that integrates with Frigate (a local NVR with AI object detection) to send real-time alerts, including snapshots and animated previews, directly to your Telegram chat.
 
+> Compatible with Frigate **0.17.x and 0.18.x**. The bot listens on the `frigate/reviews` MQTT topic.
+
 ## Features
 
 *   **Real-time Notifications:** Receive instant alerts on Telegram when motion or objects are detected by Frigate.
@@ -20,7 +22,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 Before you begin, ensure you have the following installed:
 
-*   **Go (1.18 or higher):** [https://golang.org/doc/install](https://golang.org/doc/install)
+*   **Go (1.26 or higher):** [https://golang.org/doc/install](https://golang.org/doc/install)
 *   **Docker & Docker Compose:** [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/)
 *   **Frigate:** A running instance of Frigate with MQTT enabled.
 *   **Telegram Bot Token:** Obtain a bot token from BotFather on Telegram.
@@ -52,17 +54,28 @@ Create a `.env` file in the root directory of the project (`FrigateSignalDetect/
 TELEGRAM_TOKEN=YOUR_TELEGRAM_BOT_TOKEN
 TELEGRAM_CHAT_ID=YOUR_TELEGRAM_CHAT_ID
 
-MQTT_BROKER=mqtt://YOUR_MQTT_BROKER_IP:1883
+# MQTT broker: just the host (IP or hostname). Port is optional (default 1883).
+MQTT_HOST=YOUR_MQTT_BROKER_IP
+# MQTT_PORT=1883
 MQTT_USERNAME=YOUR_MQTT_USERNAME # Optional, if your MQTT broker requires authentication
 MQTT_PASSWORD=YOUR_MQTT_PASSWORD # Optional
 
-# The MQTT topic where Frigate publishes event updates (e.g., frigate/events or frigate/reviews)
-MQTT_TOPIC=frigate/reviews 
+# The MQTT topic where Frigate publishes review updates
+MQTT_TOPIC=frigate/reviews
 
 # Optional: Filter notifications by object type (comma-separated, e.g., person,car,cat)
 # MQTT_OBJECT_FILTER=person,car
 
-FRIGATE_URL=http://YOUR_FRIGATE_IP:5000
+# Frigate: just the host (IP or hostname). The bot builds the URL itself.
+# Point it at the internal, unauthenticated port (default 5000) on a trusted LAN.
+FRIGATE_HOST=YOUR_FRIGATE_IP
+# FRIGATE_PORT=5000
+
+# Optional: to use the authenticated port (8971) instead, set FRIGATE_PORT=8971,
+# FRIGATE_TLS=true and the credentials below. Leave all empty for anonymous :5000.
+# FRIGATE_TLS=true
+# FRIGATE_USERNAME=YOUR_FRIGATE_USER
+# FRIGATE_PASSWORD=YOUR_FRIGATE_PASSWORD
 
 # Optional: Filter notifications by camera name (comma-separated, e.g., front_door,backyard)
 # CAMERA_LIST=front_door,backyard
@@ -114,18 +127,19 @@ services:
     environment:
       - TELEGRAM_TOKEN=${TELEGRAM_TOKEN}
       - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
-      - MQTT_BROKER=${MQTT_BROKER}
+      - MQTT_HOST=${MQTT_HOST}
+      - MQTT_PORT=${MQTT_PORT:-1883}
       - MQTT_USERNAME=${MQTT_USERNAME}
       - MQTT_PASSWORD=${MQTT_PASSWORD}
-      - MQTT_TOPIC=${MQTT_TOPIC}
+      - MQTT_TOPIC=${MQTT_TOPIC:-frigate/reviews}
       - MQTT_OBJECT_FILTER=${MQTT_OBJECT_FILTER}
-      - FRIGATE_URL=${FRIGATE_URL}
+      - FRIGATE_HOST=${FRIGATE_HOST}
+      - FRIGATE_PORT=${FRIGATE_PORT:-5000}
+      - FRIGATE_TLS=${FRIGATE_TLS:-false}
+      - FRIGATE_USERNAME=${FRIGATE_USERNAME}
+      - FRIGATE_PASSWORD=${FRIGATE_PASSWORD}
       - CAMERA_LIST=${CAMERA_LIST}
-      - BOT_LANGUAGE=${BOT_LANGUAGE}
-    # No need to mount /tmp if you're not saving temporary files, 
-    # but it's good practice if you do.
-    # volumes:
-    #   - /tmp:/tmp 
+      - BOT_LANGUAGE=${BOT_LANGUAGE:-fr}
 ```
 
 ## CI/CD (GitHub Actions)
