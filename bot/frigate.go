@@ -42,11 +42,34 @@ func NewFrigate(baseURL, user, pass string) *Frigate {
 func (f *Frigate) authEnabled() bool { return f.user != "" && f.pass != "" }
 
 // Snapshot downloads the annotated snapshot for a detection event to dest.
-// Both bbox (Frigate <=0.17) and bounding_box (0.18+) are passed so the
-// bounding box is drawn regardless of version; the other is ignored.
 func (f *Frigate) Snapshot(ctx context.Context, detectionID, dest string) error {
-	url := fmt.Sprintf("%s/api/events/%s/snapshot.jpg?bbox=1&bounding_box=1", f.baseURL, detectionID)
+	url := fmt.Sprintf("%s/api/events/%s/snapshot.jpg?bounding_box=1", f.baseURL, detectionID)
 	return f.download(ctx, url, dest, "snapshot")
+}
+
+// EventDescription fetches the GenAI description for a detection event.
+func (f *Frigate) EventDescription(ctx context.Context, eventID string) (string, error) {
+	url := fmt.Sprintf("%s/api/events/%s", f.baseURL, eventID)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
+	if err != nil {
+		return "", err
+	}
+	resp, err := f.do(req)
+	if err != nil {
+		return "", err
+	}
+	defer func() { _ = resp.Body.Close() }()
+	if resp.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(resp.Body)
+		return "", fmt.Errorf("event API: %s: %s", resp.Status, body)
+	}
+	var detail struct {
+		Description string `json:"description"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&detail); err != nil {
+		return "", err
+	}
+	return detail.Description, nil
 }
 
 // Preview downloads the review preview (animated GIF) to dest.

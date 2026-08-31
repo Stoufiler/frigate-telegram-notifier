@@ -12,10 +12,11 @@ type Config struct {
 	TelegramToken string
 	ChatID        int64
 
-	MQTTBroker string
-	MQTTUser   string
-	MQTTPass   string
-	MQTTTopic  string
+	MQTTBroker        string
+	MQTTUser          string
+	MQTTPass          string
+	MQTTTopic         string
+	AvailabilityTopic string // derived from MQTTTopic, e.g. "frigate/available"
 
 	FrigateURL  string
 	FrigateUser string // optional, enables API authentication when set with FrigatePass
@@ -24,6 +25,7 @@ type Config struct {
 	AllowedCameras map[string]bool // empty = all cameras allowed
 	ObjectFilter   map[string]bool // empty = all objects allowed
 	Lang           string
+	GenAI          bool // fetch GenAI descriptions from Frigate event API
 }
 
 // LoadConfig reads and validates the configuration from the environment.
@@ -67,8 +69,19 @@ func LoadConfig() (*Config, error) {
 
 	c.AllowedCameras = toSet(os.Getenv("CAMERA_LIST"))
 	c.ObjectFilter = toSet(os.Getenv("MQTT_OBJECT_FILTER"))
+	c.GenAI, _ = strconv.ParseBool(os.Getenv("FRIGATE_GENAI"))
+	c.AvailabilityTopic = deriveAvailabilityTopic(c.MQTTTopic)
 
 	return c, nil
+}
+
+// deriveAvailabilityTopic replaces the last segment of the reviews topic
+// with "available", e.g. "frigate/reviews" → "frigate/available".
+func deriveAvailabilityTopic(reviewsTopic string) string {
+	if idx := strings.LastIndex(reviewsTopic, "/"); idx >= 0 {
+		return reviewsTopic[:idx] + "/available"
+	}
+	return "frigate/available"
 }
 
 // envOr returns the environment variable value, or def when unset/empty.

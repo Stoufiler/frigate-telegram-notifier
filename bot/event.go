@@ -10,8 +10,7 @@ import (
 	"strings"
 )
 
-// reviewItem is the subset of a Frigate review we actually use. Unknown JSON
-// fields are ignored, so the bot tolerates schema additions (e.g. Frigate 0.18).
+// reviewItem is the subset of a Frigate review we actually use.
 type reviewItem struct {
 	ID        string   `json:"id"`
 	Camera    string   `json:"camera"`
@@ -21,7 +20,9 @@ type reviewItem struct {
 	Data      struct {
 		Objects    []string `json:"objects"`
 		Detections []string `json:"detections"`
+		SubLabels  []string `json:"sub_labels"`
 		Zones      []string `json:"zones"`
+		Audio      []string `json:"audio"`
 	} `json:"data"`
 }
 
@@ -84,6 +85,7 @@ func (a *App) handleNew(ctx context.Context, item reviewItem) {
 	}
 
 	caption := a.caption("caption_snapshot_simple", "caption_snapshot_object", "caption_snapshot_zone", item, nil)
+	caption = a.enrichCaption(caption, item, "")
 	if err := a.notifier.SendPhoto(dest, caption); err != nil {
 		logf(tr("telegram_send_photo_error", map[string]any{"Error": err}))
 		return
@@ -110,7 +112,18 @@ func (a *App) handleEnd(ctx context.Context, item reviewItem) {
 	if item.EndTime != nil {
 		duration = tr("duration_seconds", map[string]any{"Seconds": fmt.Sprintf("%.0f", *item.EndTime-item.StartTime)})
 	}
+
+	var description string
+	if a.cfg.GenAI && len(item.Data.Detections) > 0 {
+		if desc, err := a.frigate.EventDescription(ctx, item.Data.Detections[0]); err != nil {
+			logf(tr("genai_fetch_error", map[string]any{"Error": err}))
+		} else {
+			description = desc
+		}
+	}
+
 	caption := a.caption("caption_preview_simple", "caption_preview_object", "caption_preview_zone", item, map[string]any{"Duration": duration})
+	caption = a.enrichCaption(caption, item, description)
 	if err := a.notifier.SendAnimation(dest, caption); err != nil {
 		logf(tr("telegram_send_animation_error", map[string]any{"Error": err}))
 		return
@@ -139,4 +152,48 @@ func (a *App) caption(simpleID, objectID, zoneID string, item reviewItem, extra 
 		caption += tr(zoneID, map[string]any{"Zones": strings.Join(item.Data.Zones, ", ")})
 	}
 	return caption
+}
+
+// enrichCaption prepends a severity indicator for alerts and appends
+// sub-labels, audio detections, and GenAI description lines.
+func (a *App) enrichCaption(caption string, item reviewItem, description string) string {
+	if item.Severity == "alert" {
+		caption = tr("severity_alert") + "\n" + caption
+	}
+	if len(item.Data.SubLabels) > 0 {
+		caption += "\n" + tr("caption_sub_labels", map[string]any{
+			"SubLabels": strings.Join(item.Data.SubLabels, ", "),
+		})
+	}
+	if len(item.Data.Audio) > 0 {
+		translated := make([]string, 0, len(item.Data.Audio))
+		for _, aud := range item.Data.Audio {
+			translated = append(translated, translateLabel(aud))
+		}
+		caption += "\n" + tr("caption_audio", map[string]any{
+			"Audio": strings.Join(translated, ", "),
+		})
+	}
+	if description != "" {
+		caption += "\n" + tr("caption_description", map[string]any{
+			"Description": description,
+		})
+	}
+	return caption
+}
+
+// handleAvailability processes Frigate availability messages (online/stopped/offline).
+func (a *App) handleAvailability(payload []byte) {
+	status := strings.TrimSpace(string(payload))
+	switch status {
+	case "online":
+		logf(tr("frigate_online"))
+		_ = a.notifier.SendText(tr("frigate_online"))
+	case "stopped":
+		logf(tr("frigate_stopped"))
+		_ = a.notifier.SendText(tr("frigate_stopped"))
+	case "offline":
+		logf(tr("frigate_offline"))
+		_ = a.notifier.SendText(tr("frigate_offline"))
+	}
 }

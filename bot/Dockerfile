@@ -1,5 +1,5 @@
 # --- Build stage ---
-FROM golang:1.26.5-alpine AS builder
+FROM golang:1.27-alpine AS builder
 
 WORKDIR /app
 
@@ -7,8 +7,10 @@ WORKDIR /app
 COPY bot/go.mod bot/go.sum ./
 RUN go mod download
 
+ARG VERSION=dev
+
 COPY bot/ .
-RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o /usr/local/bin/frigate-bot .
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w -X main.version=${VERSION}" -o /usr/local/bin/frigate-bot .
 
 # --- Runtime stage ---
 FROM alpine:latest

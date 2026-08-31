@@ -2,13 +2,18 @@
 
 This project provides a Go-based Telegram bot that integrates with Frigate (a local NVR with AI object detection) to send real-time alerts, including snapshots and animated previews, directly to your Telegram chat.
 
-> Compatible with Frigate **0.17.x and 0.18.x**. The bot listens on the `frigate/reviews` MQTT topic.
+> Compatible with Frigate **0.18.x**. The bot listens on the `frigate/reviews` and `frigate/available` MQTT topics.
 
 ## Features
 
 *   **Real-time Notifications:** Receive instant alerts on Telegram when motion or objects are detected by Frigate.
 *   **Snapshot Alerts:** Get a quick snapshot of the detection event as soon as it starts.
 *   **Animated Previews (GIFs):** Receive a short animated preview (GIF) of the event once it concludes, providing more context.
+*   **Severity Awareness:** Alert-level events are highlighted with a distinct indicator in Telegram messages.
+*   **Sub-label Support:** Displays face recognition names, license plates, and classification labels when available.
+*   **Audio Detection:** Shows audio events (e.g., doorbell, glass break) in notifications.
+*   **GenAI Descriptions:** Optionally includes AI-generated event descriptions in preview captions (requires GenAI configured in Frigate).
+*   **Frigate Availability Monitoring:** Sends Telegram alerts when Frigate goes online, stops, or goes offline.
 *   **Object Filtering:** Configure the bot to only send notifications for specific detected objects (e.g., `person`, `car`, `dog`).
 *   **Camera Filtering:** Limit notifications to specific cameras configured in Frigate.
 *   **Internationalization (i18n):** Supports multiple languages for Telegram messages (currently English and French), configurable via environment variables.
@@ -82,6 +87,9 @@ FRIGATE_HOST=YOUR_FRIGATE_IP
 
 # Optional: Set the bot's language (e.g., en, fr). Defaults to 'fr'.
 # BOT_LANGUAGE=en
+
+# Optional: Include GenAI descriptions in preview captions (requires GenAI configured in Frigate).
+# FRIGATE_GENAI=true
 ```
 
 ### Running the Bot
@@ -140,6 +148,7 @@ services:
       - FRIGATE_PASSWORD=${FRIGATE_PASSWORD}
       - CAMERA_LIST=${CAMERA_LIST}
       - BOT_LANGUAGE=${BOT_LANGUAGE:-fr}
+      - FRIGATE_GENAI=${FRIGATE_GENAI:-false}
 ```
 
 ## CI/CD (GitHub Actions)

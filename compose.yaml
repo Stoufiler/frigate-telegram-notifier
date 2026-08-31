@@ -22,3 +22,5 @@ services:
       - CAMERA_LIST=${CAMERA_LIST}
       - MQTT_OBJECT_FILTER=${MQTT_OBJECT_FILTER}
       - BOT_LANGUAGE=${BOT_LANGUAGE:-fr}
+      # Set to true to include GenAI descriptions in preview captions
+      - FRIGATE_GENAI=${FRIGATE_GENAI:-false}

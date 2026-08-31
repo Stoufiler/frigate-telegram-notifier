@@ -1,8 +1,6 @@
 module github.com/Stoufiler/frigate-bot
 
-go 1.26.0
-
-toolchain go1.26.5
+go 1.27.0
 
 require (
 	github.com/eclipse/paho.mqtt.golang v1.5.1
