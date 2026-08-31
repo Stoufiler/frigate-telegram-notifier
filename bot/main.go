@@ -22,9 +22,28 @@ type App struct {
 }
 
 func main() {
-	if len(os.Args) > 1 && (os.Args[1] == "-version" || os.Args[1] == "--version") {
-		fmt.Println("frigate-bot " + version)
-		return
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "-version", "--version":
+			fmt.Println("frigate-bot " + version)
+			return
+		case "--self-update":
+			if err := selfUpdate(context.Background()); err != nil {
+				log.Fatalf("⚠️ %v", err)
+			}
+			return
+		case "--check-update":
+			release, needsUpdate, err := checkForUpdate(context.Background())
+			if err != nil {
+				log.Fatalf("⚠️ %v", err)
+			}
+			if needsUpdate {
+				fmt.Printf("Update available: %s → %s\nRun with --self-update to install.\n", version, release.TagName)
+			} else {
+				fmt.Printf("Up to date (%s).\n", version)
+			}
+			return
+		}
 	}
 
 	cfg, err := LoadConfig()

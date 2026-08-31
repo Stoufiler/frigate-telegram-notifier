@@ -18,6 +18,7 @@ linters:
   settings:
     gosec:
       excludes:
+        - G302 # self-update binary must be executable (0755)
         - G304 # file paths are built from trusted Frigate IDs, not user input
 
 run:

@@ -96,16 +96,25 @@ FRIGATE_HOST=YOUR_FRIGATE_IP
 
 1.  **Build the Go application:**
     ```bash
-    cd bot
-    go build -o frigate_bot
+    make build
     ```
 
 2.  **Run the bot:**
     ```bash
-    # From the 'bot' directory
-    env $(cat ../.env | grep -v '^#' | xargs) ./frigate_bot
+    # From the project root
+    env $(cat .env | grep -v '^#' | xargs) ./bot/frigate-bot
     ```
-    *Note: The `env $(cat ../.env | grep -v '^#' | xargs)` part is a common way to load environment variables from a `.env` file in a shell. Ensure your shell supports it.*
+
+3.  **Check for updates:**
+    ```bash
+    ./bot/frigate-bot --check-update
+    ```
+
+4.  **Self-update to the latest release:**
+    ```bash
+    ./bot/frigate-bot --self-update
+    ```
+    The bot downloads the matching binary from GitHub Releases and replaces itself in place. Restart after updating. Not available in Docker (update your image instead).
 
 ### Docker Deployment (CI/CD)
 
