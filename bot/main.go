@@ -2,13 +2,17 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
+	"os"
 	"os/signal"
 	"strings"
 	"syscall"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
 )
+
+var version = "dev"
 
 // App wires together the configuration and the Frigate/Telegram clients.
 type App struct {
@@ -18,6 +22,30 @@ type App struct {
 }
 
 func main() {
+	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "-version", "--version":
+			fmt.Println("frigate-bot " + version)
+			return
+		case "--self-update":
+			if err := selfUpdate(context.Background()); err != nil {
+				log.Fatalf("⚠️ %v", err)
+			}
+			return
+		case "--check-update":
+			release, needsUpdate, err := checkForUpdate(context.Background())
+			if err != nil {
+				log.Fatalf("⚠️ %v", err)
+			}
+			if needsUpdate {
+				fmt.Printf("Update available: %s → %s\nRun with --self-update to install.\n", version, release.TagName)
+			} else {
+				fmt.Printf("Up to date (%s).\n", version)
+			}
+			return
+		}
+	}
+
 	cfg, err := LoadConfig()
 	if err != nil {
 		log.Fatalf("⚠️ %v", err)
@@ -36,9 +64,13 @@ func main() {
 		notifier: notifier,
 	}
 
+	logf(tr("bot_version", map[string]any{"Version": version}))
 	logf(tr("bot_ready"))
 	if len(cfg.ObjectFilter) > 0 {
 		logf(tr("object_filter_enabled", map[string]any{"Objects": keys(cfg.ObjectFilter)}))
+	}
+	if cfg.GenAI {
+		logf(tr("genai_enabled"))
 	}
 
 	// Stop cleanly on SIGINT/SIGTERM.
@@ -55,7 +87,7 @@ func main() {
 	}
 
 	<-ctx.Done()
-	client.Unsubscribe(cfg.MQTTTopic)
+	client.Unsubscribe(cfg.MQTTTopic, cfg.AvailabilityTopic)
 	client.Disconnect(250)
 	logf(tr("bot_stopped"))
 }
@@ -86,6 +118,15 @@ func (a *App) connectMQTT(ctx context.Context) (mqtt.Client, error) {
 		client.Disconnect(250)
 		return nil, token.Error()
 	}
+
+	availHandler := func(_ mqtt.Client, m mqtt.Message) {
+		a.handleAvailability(m.Payload())
+	}
+	if token := client.Subscribe(a.cfg.AvailabilityTopic, 0, availHandler); token.Wait() && token.Error() != nil {
+		client.Disconnect(250)
+		return nil, token.Error()
+	}
+
 	return client, nil
 }
 

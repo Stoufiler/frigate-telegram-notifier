@@ -1,0 +1,26 @@
+version: "2"
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/Stoufiler/frigate-bot
+
+linters:
+  default: standard
+  enable:
+    - gosec
+    - misspell
+    - errorlint
+    - copyloopvar
+  settings:
+    gosec:
+      excludes:
+        - G302 # self-update binary must be executable (0755)
+        - G304 # file paths are built from trusted Frigate IDs, not user input
+
+run:
+  timeout: 5m
