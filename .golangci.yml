@@ -6,7 +6,8 @@ formatters:
     - goimports
   settings:
     goimports:
-      local-prefixes: github.com/Stoufiler/frigate-bot
+      local-prefixes:
+        - github.com/Stoufiler/frigate-bot
 
 linters:
   default: standard
